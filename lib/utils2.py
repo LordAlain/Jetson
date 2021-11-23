@@ -28,8 +28,8 @@ NUM_CLASSES = 43
 # Model parameters
 LR = 5e-3  # learning rate
 KEEP_PROB = 0.5  # dropout keep probability
-#OPT = tf.optimizers.SGD (learning_rate=LR, momentum = 0, nesterov = False, name='SGD')
-OPT = tf.train.GradientDescentOptimizer(learning_rate=LR)  # choose which optimizer to use
+OPT = tf.optimizers.SGD (learning_rate=LR, momentum = 0, nesterov = False, name='SGD')
+# OPT = tf.train.GradientDescentOptimizer(learning_rate=LR)  # choose which optimizer to use
 
 # Training process
 RESTORE = False  # restore previous model, don't train?
@@ -78,6 +78,8 @@ def preprocess_data(X, y):
     # Make all image array values fall within the range -1 to 1
     # Note all values in original images are between 0 and 255, as uint8
     X = X.astype('float32')
+    X = (X - 128.) / 128.
+
     # Convert the labels from numerical labels to one-hot encoded labels
     y_onehot = np.zeros((y.shape[0], NUM_CLASSES))
     for i, onehot_label in enumerate(y_onehot):
