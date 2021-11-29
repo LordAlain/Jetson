@@ -1,4 +1,4 @@
-
+#!/bin/bash
 # JP_VERSION = 46
 
 sudo nvpmodel -m 0
