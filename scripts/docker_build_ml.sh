@@ -65,9 +65,9 @@ if [[ "$CONTAINERS" == "tensorflow" || "$CONTAINERS" == "all" ]]; then
 
 	if [[ $L4T_RELEASE -eq 32 ]] && [[ $L4T_REVISION_MAJOR -ge 6 ]]; then
 		# TensorFlow 1.15.5 for JetPack 4.6
-		build_tensorflow "https://nvidia.box.com/shared/static/0e4otnp1pvbo7exwrkermahfrlfe9exo.whl" \
-					  "tensorflow-1.15.5+nv21.7-cp36-cp36m-linux_aarch64.whl" \
-					  "l4t-tensorflow:r$L4T_VERSION-tf1.15-py3"
+		# build_tensorflow "https://nvidia.box.com/shared/static/0e4otnp1pvbo7exwrkermahfrlfe9exo.whl" \
+		# 			  "tensorflow-1.15.5+nv21.7-cp36-cp36m-linux_aarch64.whl" \
+		# 			  "l4t-tensorflow:r$L4T_VERSION-tf1.15-py3"
 
 		# TensorFlow 2.5.0 for JetPack 4.6
 		build_tensorflow "https://nvidia.box.com/shared/static/jfbpcioxcb3d3d3wrm1dbtom5aqq5azq.whl" \
@@ -103,7 +103,7 @@ if [[ "$CONTAINERS" == "all" ]]; then
 	sh ./scripts/docker_build.sh l4t-ml:r$L4T_VERSION-py3 Dockerfile.ml \
 			--build-arg BASE_IMAGE=$BASE_IMAGE \
 			--build-arg PYTORCH_IMAGE=l4t-pytorch:r$L4T_VERSION-pth1.9-py3 \
-			--build-arg TENSORFLOW_IMAGE=l4t-tensorflow:r$L4T_VERSION-tf1.15-py3 #\
+			--build-arg TENSORFLOW_IMAGE=l4t-tensorflow:r$L4T_VERSION-tf2.5-py3 #\
 
 	if [ -f "$CV_CSV.backup" ]; then
 		sudo mv $CV_CSV.backup $CV_CSV

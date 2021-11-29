@@ -6,7 +6,7 @@ sudo docker pull nvcr.io/nvidia/l4t-ml:r32.6.1-py3
 docker image ls
 
 
-docker exec -it <CONTAINER_ID_OR_NAME> bash
+# docker exec -it <CONTAINER_ID_OR_NAME> bash
 
 
 # Docker Run commands
