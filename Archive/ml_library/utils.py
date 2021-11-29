@@ -2,18 +2,13 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.python.ops.gen_math_ops import AccumulateNV2
 import cv2 as cv
-from skimage import io, transform
+from skimage.transform import resize
 import math
 import urllib.request
 import os.path
-import pickle
-import zipfile
 
 from config import *
-# from utils import *
-from model import *
 
 ########################################################
 # Helper functions and generators
@@ -22,7 +17,8 @@ from model import *
 
 def importDatasets():
     """
-    blah
+    Display random image, and transformed versions of it
+    For debug only
     """
     if not os.path.exists("./Datasets/GTSRB_Final_Training_Images.zip"):
         # Get file from URL
@@ -38,25 +34,20 @@ def importDatasets():
 
 
 def generateTensor(archive):
-    """
-    blah
-    """
-    archive = zipfile.ZipFile(archive, 'r')
     file_paths = [file for file in archive.namelist()
                   if '.ppm' in file]
     tensor = {}
     for filename in file_paths:
         with archive.open(filename) as img_file:
 
-            # img = np.array(Image.open(img_file.read()))
-            # img = plt.imread(img_file.read())
-            # img = cv.cvtColor(cv.imread(img_file.read()), cv.COLOR_BGR2RGB)
-            img = io.imread(img_file.read())
-            img = transform.resize(img,
-                                   output_shape=(IMG_SIZE, IMG_SIZE),
-                                   mode='reflect',
-                                   anti_aliasing=True
-                                   )
+            # img = Image.open(img_file.read())
+            # img = imread(img_file.read())
+            img = cv.imread(img_file.read())
+            img = resize(img,
+                         output_shape=(IMG_SIZE, IMG_SIZE),
+                         mode='reflect',
+                         anti_aliasing=True
+                         )
 
             img_class = int(filename.split('/')[-2])
 
@@ -67,152 +58,24 @@ def generateTensor(archive):
     return tensor
 
 
-# def attack(sess, images, labels):
-    # """
-    # originally from visuliza_adv
-    # """
-
-    # eps = 0.1
-    # step_size = 0.1
-    # clip_range = 1
-
-    # # eps = 3
-    # # step_size = 3
-    # # clip_range = 255
-
-    # gradients = sess.run(
-    #     grad, feed_dict={model.x: images, model.y: labels, model.keep_prob: 1.})
-
-    # x = np.copy(images)
-
-    # x = x + step_size*gradients
-
-    # x = np.clip(x, images - eps, images + eps)
-    # x = np.clip(x, 0., clip_range)
-
-    # return x
-
-
 def attack(sess, model, images, labels):
-    """
-    blah
-    """
-    # grad = tf.sign(tf.gradients(model.loss, model.x))[0]
-    grad = tf.sign(tf.gradients(model.reg_loss, model.x))[0]
 
-    # eps = 0.1
-    # step_size = 0.1
-    # clip_range = 1
+    loss = model.loss
+
+    grad = tf.sign(tf.gradients(loss, model.x))[0]
 
     eps = 3
     step_size = 3
-    clip_range = 255
-
-    new_images = np.copy(images)
+    x = np.copy(images)
 
     for i in range(1):
         gradients = sess.run(
-            grad, feed_dict={model.x: new_images, model.y: labels, model.keep_prob: 1.})
-        new_images = new_images + step_size*gradients
-        new_images = np.clip(new_images, images - eps, images + eps)
-        new_images = np.clip(new_images, 0., clip_range)
+            grad, feed_dict={model.x: x, model.y: labels, model.keep_prob: 1.})
+        x = x + step_size*gradients
+        x = np.clip(x, images - eps, images + eps)
+        x = np.clip(x, 0., 255.)
 
-    return new_images
-
-
-def test_attack(model_file):
-    """
-    blah
-    """
-    with tf.Session() as sess:
-
-        saver = tf.train.Saver()
-        filename = tf.train.latest_checkpoint(model_file)
-        print("Latest training checkpoint is ", filename)
-        if filename != None:
-            saver.restore(sess, filename)
-        else:
-            print("No checkpoint found, exit.")
-            exit()
-
-        # Accuracy = 0
-        num = 10
-        batch_size = math.ceil(x_test.shape[0] / num)
-        test_gen = next_batch(x_test, y_test, batch_size, True)
-
-        for i in range(num):
-
-            # Run testing on each batch
-            images, labels = next(test_gen)
-
-            adv_images = attack(sess, images, labels)
-            # blr_images = blur(images, 10)
-            # ocl_images = ocul(images, 5)
-            # drk_images = dark(images, 10)
-            # drk_images = light(images, 10)
-
-            # Perform gradient update (i.e. training step) on current batch
-            # acc = sess.run(model.accuracy, feed_dict={x: images, y: labels, keep_prob: 1})
-            # adv_acc = sess.run(model.accuracy, feed_dict={x: adv_images, y: labels, keep_prob: 1})
-            # print("Accuracy vs Adv_Accuracy：", acc, adv_acc)
-            # print("Test iter:", i, ", acc:", acc, ", adv_acc :", adv_acc)
-
-            # grad_loss = sess.run(model.grad_loss, feed_dict={x: images, y: labels, keep_prob: 1})
-            # print(grad_loss)
-
-            # Accuracy += adv_acc
-            # idx = sess.run(model.predictions, feed_dict={x: images, y: labels, keep_prob: 1})
-
-            # adv_idx = sess.run(model.predictions, feed_dict={x: adv_images, y: labels, keep_prob: 1})
-            # print("Original Label is:", label_map[np.argmax(labels[0])])
-            # print(label_map[idx[0]], label_map[adv_idx[0]], label_map[labels[0][0]])
-            # gradients = sess.run(model.vis, feed_dict={x: images, y: labels, keep_prob: 1})
-
-            # plt.subplot(1, 6, 1)
-            # images = images.astype(np.uint8)
-            # plt.imshow(images.reshape((32, 32, 3)))
-            # plt.title(label_map[idx[0]])
-
-            # plt.subplot(1, 6, 2)
-            # adv_images = adv_images.astype(np.uint8)
-            # plt.imshow(adv_images.reshape((32, 32, 3)))
-            # plt.title(label_map[adv_idx[0]])
-
-            # plt.subplot(1, 6, 3)
-            # blr_images = blr_images.astype(np.uint8)
-            # plt.imshow(blr_images.reshape((32, 32, 3)))
-            # plt.title("Gussian Blur")
-
-            # plt.subplot(1, 6, 4)
-            # drk_images = drk_images.astype(np.uint8)
-            # plt.imshow(drk_images.reshape((32, 32, 3)))
-            # plt.title("Lighting")
-
-            # plt.subplot(1, 6, 5)
-            # ocl_images = ocl_images.astype(np.uint8)
-            # plt.imshow(ocl_images.reshape((32, 32, 3)))
-            # plt.title("Occulusion")
-
-            # plt.subplot(1, 6, 6)
-            # gradients = gradients * 1000
-            # gradients = np.clip(gradients, 0., 1.)*255
-            # gradients = gradients.astype(np.uint8)
-            # plt.imshow(gradients.reshape((32, 32, 3)))
-            # plt.title("Gradients")
-            # plt.show()
-
-        # Accuracy /= num
-        # print("Overall adversarial acc :", Accuracy)
-
-        # # Show Plots
-        # plt.subplot(1,2,1)
-        # plt.imshow(images.reshape((32, 32, 3)))
-        # plt.title(label_map[idx[0]])
-        # plt.subplot(1,2,2)
-        # plt.imshow(images.reshape((32, 32, 3)))
-        # plt.title(label_map[adv_idx[0]])
-        # plt.show()
-        # print(label_map[idx[0]], label_map[adv_idx[0]])
+    return x
 
 
 def calculate_accuracy(data_gen, data_size, batch_size, accuracy, x, y, keep_prob, sess):
@@ -305,32 +168,32 @@ def data_aug(orig_data):
     # with open(orig_file, mode='rb') as f:
     #     orig_data = pickle.load(f)
 
-    orig_x, orig_y = orig_data['features'], orig_data['labels']
+    orig_X, orig_y = orig_data['features'], orig_data['labels']
 
     # Create NUM_NEW_IMAGES new images, via image transform on random original image
     for i in range(NUM_NEW_IMAGES):
         # Pick a random image from original dataset to transform
-        rand_idx = np.random.randint(orig_x.shape[0])
+        rand_idx = np.random.randint(orig_X.shape[0])
 
         # Create new image
-        image = transform_image(orig_x[rand_idx], ANGLE, TRANSLATION, WARP)
+        image = transform_image(orig_X[rand_idx], ANGLE, TRANSLATION, WARP)
 
         # Add new data to augmented dataset
         if i == 0:
-            new_x = np.expand_dims(image, axis=0)
+            new_X = np.expand_dims(image, axis=0)
             new_y = np.array([orig_y[rand_idx]])
         else:
-            new_x = np.concatenate((new_x, np.expand_dims(image, axis=0)))
+            new_X = np.concatenate((new_X, np.expand_dims(image, axis=0)))
             new_y = np.append(new_y, orig_y[rand_idx])
 
         if (i+1) % 1000 == 0:
             print('%d new images generated' % (i+1,))
 
-    new_x = np.concatenate((orig_x, new_x))
+    new_X = np.concatenate((orig_X, new_X))
     new_y = np.concatenate((orig_y, new_y))
 
     # # Create dict of new data
-    new_data = {'features': new_x, 'labels': new_y}
+    new_data = {'features': new_X, 'labels': new_y}
 
     return new_data
 
@@ -343,32 +206,32 @@ def data_aug(orig_file, new_file):
     with open(orig_file, mode='rb') as f:
         orig_data = pickle.load(f)
 
-    orig_x, orig_y = orig_data['features'], orig_data['labels']
+    orig_X, orig_y = orig_data['features'], orig_data['labels']
 
     # Create NUM_NEW_IMAGES new images, via image transform on random original image
     for i in range(NUM_NEW_IMAGES):
         # Pick a random image from original dataset to transform
-        rand_idx = np.random.randint(orig_x.shape[0])
+        rand_idx = np.random.randint(orig_X.shape[0])
 
         # Create new image
-        image = transform_image(orig_x[rand_idx], ANGLE, TRANSLATION, WARP)
+        image = transform_image(orig_X[rand_idx], ANGLE, TRANSLATION, WARP)
 
         # Add new data to augmented dataset
         if i == 0:
-            new_x = np.expand_dims(image, axis=0)
+            new_X = np.expand_dims(image, axis=0)
             new_y = np.array([orig_y[rand_idx]])
         else:
-            new_x = np.concatenate((new_x, np.expand_dims(image, axis=0)))
+            new_X = np.concatenate((new_X, np.expand_dims(image, axis=0)))
             new_y = np.append(new_y, orig_y[rand_idx])
 
         if (i+1) % 1000 == 0:
             print('%d new images generated' % (i+1,))
 
-    new_x = np.concatenate((orig_x, new_x))
+    new_X = np.concatenate((orig_X, new_X))
     new_y = np.concatenate((orig_y, new_y))
 
     # Create dict of new data, and write it to disk via pickle file
-    new_data = {'features': new_x, 'labels': new_y}
+    new_data = {'features': new_X, 'labels': new_y}
     with open(new_file, mode='wb') as f:
         pickle.dump(new_data, f)
 
@@ -417,36 +280,14 @@ def display_random_images(images):
     #     plt.show()
 
 
-def map_labels(label_csv):
-    """
-    blah
-    """
-    label_map = {}
-    with open(label_csv, 'r') as f:
-        first_line = True
-        for line in f:
-            # Ignore first line
-            if first_line:
-                first_line = False
-                continue
-
-            # Populate label_map
-            label_int, label_string = line.split(',')
-            label_int = int(label_int)
-
-            label_map[label_int] = label_string
-
-    return label_map
-
-
-def next_batch(tensor, batch_size, augment_data):
+def next_batch(X, y, batch_size, augment_data):
     """
     Generator to generate data and labels
     Each batch yielded is unique, until all data is exhausted
     If all data is exhausted, the next call to this generator will throw a StopIteration
 
     Arguments:
-        * x: image data, a tensor of shape (dataset_size, 32, 32, 3)
+        * X: image data, a tensor of shape (dataset_size, 32, 32, 3)
         * y: labels, a tensor of shape (dataset_size,)  <-- i.e. a list
         * batch_size: Size of the batch to yield
         * augment_data: Boolean value, whether to augment the data (i.e. perform image transform)
@@ -460,13 +301,11 @@ def next_batch(tensor, batch_size, augment_data):
     # but using a generator is a more scalable practice,
     # since future datasets may be too large to fit in memory
 
-    x, y = split(tensor)
-
-    # We know x and y are randomized from the train/validation split already,
+    # We know X and y are randomized from the train/validation split already,
     # so just sequentially yield the batches
     start_idx = 0
-    while start_idx < x.shape[0]:
-        images = x[start_idx: start_idx + batch_size]
+    while start_idx < X.shape[0]:
+        images = X[start_idx: start_idx + batch_size]
         labels = y[start_idx: start_idx + batch_size]
 
         yield (np.array(images), np.array(labels))
@@ -474,88 +313,25 @@ def next_batch(tensor, batch_size, augment_data):
         start_idx += batch_size
 
 
-def next_batch(x, y, batch_size, augment_data):
-    """
-    Generator to generate data and labels
-    Each batch yielded is unique, until all data is exhausted
-    If all data is exhausted, the next call to this generator will throw a StopIteration
-
-    Arguments:
-        * x: image data, a tensor of shape (dataset_size, 32, 32, 3)
-        * y: labels, a tensor of shape (dataset_size,)  <-- i.e. a list
-        * batch_size: Size of the batch to yield
-        * augment_data: Boolean value, whether to augment the data (i.e. perform image transform)
-
-    Yields:
-        A tuple of (images, labels), where:
-            * images is a tensor of shape (batch_size, 32, 32, 3)
-            * labels is a tensor of shape (batch_size,)
-    """
-    # A generator in this case is likely overkill,
-    # but using a generator is a more scalable practice,
-    # since future datasets may be too large to fit in memory
-
-    # We know x and y are randomized from the train/validation split already,
-    # so just sequentially yield the batches
-    start_idx = 0
-    while start_idx < x.shape[0]:
-        images = x[start_idx: start_idx + batch_size]
-        labels = y[start_idx: start_idx + batch_size]
-
-        yield (np.array(images), np.array(labels))
-
-        start_idx += batch_size
-
-
-def preprocess_data(tensor):
+def preprocess_data(X, y):
     """
     Preprocess image data, and convert labels into one-hot
 
     Arguments:
-        * tensor.x: Features
-        * tensor.y: Labels
-
-    Returns:
-        * Preprocessed x, one-hot version of y
-    """
-    x, y = split(tensor)
-    # Convert from RGB to grayscale if applicable
-    if GRAYSCALE:
-        x = rgb_to_gray(x)
-
-    # Make all image array values fall within the range -1 to 1
-    # Note all values in original images are between 0 and 255, as uint8
-    x = x.astype('float32')
-    x = (x - 128.) / 128.
-
-    # Convert the labels from numerical labels to one-hot encoded labels
-    y_onehot = np.zeros((y.shape[0], NUM_CLASSES))
-    for i, onehot_label in enumerate(y_onehot):
-        onehot_label[y[i]] = 1.
-    y = y_onehot
-
-    return x, y
-
-
-def preprocess_data(x, y):
-    """
-    Preprocess image data, and convert labels into one-hot
-
-    Arguments:
-        * x: Image data
+        * X: Image data
         * y: Labels
 
     Returns:
-        * Preprocessed x, one-hot version of y
+        * Preprocessed X, one-hot version of y
     """
     # Convert from RGB to grayscale if applicable
     if GRAYSCALE:
-        x = rgb_to_gray(x)
+        X = rgb_to_gray(X)
 
     # Make all image array values fall within the range -1 to 1
     # Note all values in original images are between 0 and 255, as uint8
-    x = x.astype('float32')
-    x = (x - 128.) / 128.
+    X = X.astype('float32')
+    X = (X - 128.) / 128.
 
     # Convert the labels from numerical labels to one-hot encoded labels
     y_onehot = np.zeros((y.shape[0], NUM_CLASSES))
@@ -563,7 +339,7 @@ def preprocess_data(x, y):
         onehot_label[y[i]] = 1.
     y = y_onehot
 
-    return x, y
+    return X, y
 
 
 def rgb_to_gray(images):
@@ -580,11 +356,6 @@ def rgb_to_gray(images):
     images_gray = np.average(images, axis=3)
     images_gray = np.expand_dims(images_gray, axis=3)
     return images_gray
-
-
-def split(tensor):
-    x, y = tensor['features'], tensor['labels']
-    return x, y
 
 
 def transform_image(image, angle, translation, warp):

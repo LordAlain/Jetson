@@ -1,7 +1,7 @@
 # Imports
 import tensorflow as tf
-# import cupy as cp
-from tensorflow.keras import Input
+import cupy as cp
+from tensorflow import keras
 from tensorflow.keras.layers import Conv2D, MaxPool2D
 from tensorflow.keras.layers import (Flatten, Dense, Dropout)
 import math
@@ -15,12 +15,12 @@ class Model(tf.keras.Model):
         super(Model, self).__init__()
 
         # Tensors representing input images and labels
-        self.x = Input(
+        self.x = tf.keras.Input(
             [None, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], dtype=tf.dtypes.float32)
-        self.y = Input([None, NUM_CLASSES], dtype=tf.dtypes.float32)
+        self.y = tf.keras.Input([None, NUM_CLASSES], dtype=tf.dtypes.float32)
 
         # Placeholder for dropout keep probability
-        self.rate = Input([None], dtype=tf.dtypes.float32)
+        self.rate = tf.keras.Input([None], dtype=tf.dtypes.float32)
 
         # In TF2, due to eager execution and automatic control dependencies,
         # the batch normalization moving average updates will be executed right away.
@@ -59,10 +59,10 @@ class Model(tf.keras.Model):
         # Final fully-connected layers
         net = Flatten(net)
         net = self.fc4(net)
-        net = Dropout(net, RATE)
+        net = Dropout(net, rate)
 
         net = self.fc5(net)
-        net = Dropout(net, RATE)
+        net = Dropout(net, rate)
         net = self.fc6(net)
 
         # Final output (logits)

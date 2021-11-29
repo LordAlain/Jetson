@@ -1,18 +1,18 @@
 # Imports
 import tensorflow as tf
-from PIL import Image
+# from PIL import Image
 from sklearn.model_selection import train_test_split
 import numpy as np
 import math
-import os
+# import os
 import time
 import pickle
 
 
-from utils import preprocess_data, next_batch, calculate_accuracy
+from config import *
+from utils import *
 from model import Model
 
-from config import *
 
 # Load pickled data
 
