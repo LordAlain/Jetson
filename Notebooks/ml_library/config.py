@@ -49,6 +49,7 @@ RESTORE = False  # restore previous model, don't train?
 RESUME = False  # resume training from previously trained model?
 
 NUM_EPOCH = 40
+LEARNING_RATE =
 # coef = 0.00005
 
 BATCH_SIZE = 128  # batch size for training (relatively small)

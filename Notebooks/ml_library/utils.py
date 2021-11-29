@@ -136,16 +136,16 @@ def test_attack(model_file):
             exit()
 
         # Accuracy = 0
-        num = 10
-        batch_size = math.ceil(x_test.shape[0] / num)
-        test_gen = next_batch(x_test, y_test, batch_size, True)
+        # num = 10
+        # batch_size = math.ceil(x_test.shape[0] / num)
+        # test_gen = next_batch(x_test, y_test, batch_size, True)
 
-        for i in range(num):
+        # for i in range(num):
 
             # Run testing on each batch
-            images, labels = next(test_gen)
+            # images, labels = next(test_gen)
 
-            adv_images = attack(sess, images, labels)
+            # adv_images = attack(sess, images, labels)
             # blr_images = blur(images, 10)
             # ocl_images = ocul(images, 5)
             # drk_images = dark(images, 10)

@@ -1,18 +1,185 @@
 # Imports
 import tensorflow as tf
 # import cupy as cp
+from tensorflow import keras
+from tensorflow.keras import layers
 from tensorflow.keras import Input
-from tensorflow.keras.layers import Conv2D, MaxPool2D
-from tensorflow.keras.layers import (Flatten, Dense, Dropout)
-import math
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import *
 
 from config import *
 from utils import *
+from w_utils import *
 
 
-class Model(tf.keras.Model):
+def random_invert_img(x, p=0.5):
+    if tf.random.uniform([]) < p:
+        x = (255-x)
+    else:
+        x
+    return x
+
+
+class RandomInvert(layers.Layer):
+    def __init__(self, factor=0.5, **kwargs):
+        super().__init__(**kwargs)
+        self.factor = factor
+
+    def call(self, x):
+        return random_invert_img(x)
+
+
+resize_and_rescale = tf.keras.Sequential([
+    layers.Resizing(IMG_SIZE, IMG_SIZE),
+    layers.Rescaling(1./255, input_shape=(IMG_SIZE, IMG_SIZE, NUM_CHANNELS))
+])
+
+
+data_augmentation = keras.Sequential(
+    [
+        # resize_and_rescale,
+        # RandomInvert,
+        layers.RandomFlip("horizontal",
+                          input_shape=(IMG_SIZE,
+                                       IMG_SIZE,
+                                       NUM_CHANNELS)),
+        layers.RandomRotation(0.1),
+        layers.RandomZoom(0.1),
+    ]
+)
+
+
+class Sampling(layers.Layer):
+    """Uses (z_mean, z_log_var) to sample z, the vector encoding image."""
+
+    def call(self, inputs):
+        z_mean, z_log_var = inputs
+        batch = tf.shape(z_mean)[0]
+        dim = tf.shape(z_mean)[1]
+        epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
+        return z_mean + tf.exp(0.5 * z_log_var) * epsilon
+
+
+class Encoder(layers.Layer):
+    """
+    Maps image to a triplet (z_mean, z_log_var, z).
+    """
+
+    def __init__(self, latent_dim=32, intermediate_dim=64, name="encoder", **kwargs):
+        super(Encoder, self).__init__(name=name, **kwargs)
+        self.dense_proj = Dense(intermediate_dim, activation="gelu")
+        self.dense_mean = Dense(latent_dim)
+        self.dense_log_var = Dense(latent_dim)
+        self.sampling = Sampling()
+
+    def call(self, inputs):
+        x = self.dense_proj(inputs)
+        z_mean = self.dense_mean(x)
+        z_log_var = self.dense_log_var(x)
+        z = self.sampling((z_mean, z_log_var))
+        return z_mean, z_log_var, z
+
+
+class Decoder(layers.Layer):
+    """Converts z, the encoded image vector, back into an image."""
+
+    def __init__(self, original_dim, intermediate_dim=64, name="decoder", **kwargs):
+        super(Decoder, self).__init__(name=name, **kwargs)
+        self.dense_proj = Dense(intermediate_dim, activation="gelu")
+        self.dense_output = Dense(original_dim, activation="sigmoid")
+
+    def call(self, inputs):
+        x = self.dense_proj(inputs)
+        return self.dense_output(x)
+
+
+class VariationalAutoEncoder(tf.keras.Model):
+    """Combines the encoder and decoder into an end-to-end model for training."""
+
+    def __init__(
+        self,
+        original_dim,
+        intermediate_dim=IMG_SIZE*2,
+        latent_dim=IMG_SIZE,
+        name="autoencoder",
+        **kwargs
+    ):
+        super(VariationalAutoEncoder, self).__init__(name=name, **kwargs)
+        self.original_dim = original_dim
+        self.data_aug = data_augmentation()
+        self.encoder = Encoder(latent_dim=latent_dim,
+                               intermediate_dim=intermediate_dim)
+        self.decoder = Decoder(original_dim, intermediate_dim=intermediate_dim)
+
+    def call(self, inputs, REIN=False):
+        # REIN Data Augmentation
+        if(REIN):
+            inputs = self.data_aug(inputs)
+        z_mean, z_log_var, z = self.encoder(inputs)
+        reconstructed = self.decoder(z)
+        # Add KL divergence regularization loss.
+        kl_loss = -0.5 * tf.reduce_mean(
+            z_log_var - tf.square(z_mean) - tf.exp(z_log_var) + 1
+        )
+        self.add_loss(kl_loss)
+        return reconstructed
+
+
+def get_uncompiled_model(REIN=False):
+    inputs = keras.Input(
+        shape=(IMG_SIZE, IMG_SIZE, NUM_CHANNELS), name="inputs")
+    model = keras.Sequential()
+    model.add(resize_and_rescale)
+
+    # REIN Data Augmentation
+    if(REIN):
+        model.add(data_augmentation)
+
+    model.add(Conv2D(16, 3, padding='same', activation='gelu'))
+    model.add(BatchNormalization)
+    model.add(MaxPooling2D())
+    model.add(Conv2D(64, 3, strides=(3, 3), padding='same', activation='gelu'))
+    model.add(BatchNormalization)
+    model.add(MaxPooling2D())
+    model.add(Conv2D(128, 3, padding='same', activation='gelu'))
+    model.add(BatchNormalization)
+    model.add(Conv2D(128, 3, padding='same', activation='gelu'))
+    model.add(BatchNormalization)
+    model.add(MaxPooling2D())
+    model.add(layers.Flatten())
+
+    # FC Layers w/ Dropout
+    model.add(Dense(1024, activation='gelu'))
+    model.add(Dropout(RATE))
+    model.add(Dense(1024, activation='gelu'))
+    model.add(Dropout(RATE))
+    outputs = Dense(NUM_CLASSES, activation="softmax", name="predictions")(x)
+
+    # build model
+    model = keras.Model(inputs=inputs, outputs=outputs)
+    return model
+
+
+def get_compiled_model(REIN=False):
+    model = get_uncompiled_model(REIN)
+
+    # model.compile(
+    #     optimizer="rmsprop",
+    #     loss="sparse_categorical_crossentropy",
+    #     metrics=["sparse_categorical_accuracy"],
+    # )
+
+    model.summary()
+    model.compile(optimizer='adam',
+                  loss=tf.keras.losses.SparseCategoricalCrossentropy(
+                      from_logits=True),
+                  metrics=['accuracy'])
+    return model
+
+
+class oldModel(tf.keras.Model):
     def __init__(self):
-        super(Model, self).__init__()
+        super(oldModel, self).__init__()
 
         # Tensors representing input images and labels
         self.x = Input(
@@ -73,24 +240,23 @@ class Model(tf.keras.Model):
         self.cw_grad = tf.gradients(self.reg_loss, self.x)[0]
         self.vis = tf.gradients(correct_logit, self.x)[0]
 
+        # OPT = tf.train.GradientDescentOptimizer(learning_rate=LR)  # choose which optimizer to use
+        # OPT = tf.optimizers.SGD(
+        #     learning_rate=LR, momentum=0, nesterov=False, name='SGD')
 
-#         OPT = tf.train.GradientDescentOptimizer(learning_rate=LR)  # choose which optimizer to use
-        OPT = tf.optimizers.SGD(
-            learning_rate=LR, momentum=0, nesterov=False, name='SGD')
+        # # Loss (data loss and regularization loss) and optimizer
+        # self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
+        #     logits=self.logits, labels=self.y))
+        # grad = tf.gradients(self.loss, self.x)[0]
+        # self.grad_loss = tf.nn.l2_loss(grad)
+        # self.optimizer = OPT.minimize(self.loss+50*self.grad_loss)
 
-        # Loss (data loss and regularization loss) and optimizer
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(
-            logits=self.logits, labels=self.y))
-        grad = tf.gradients(self.loss, self.x)[0]
-        self.grad_loss = tf.nn.l2_loss(grad)
-        self.optimizer = OPT.minimize(self.loss+50*self.grad_loss)
+        # # Prediction (used during inference)
+        # self.predictions = tf.argmax(self.logits, 1)
 
-        # Prediction (used during inference)
-        self.predictions = tf.argmax(self.logits, 1)
-
-        # Accuracy metric calculation
-        correct_prediction = tf.equal(self.predictions, tf.argmax(self.y, 1))
-        self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        # # Accuracy metric calculation
+        # correct_prediction = tf.equal(self.predictions, tf.argmax(self.y, 1))
+        # self.accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         # Final output (logits)
         return self.logits
