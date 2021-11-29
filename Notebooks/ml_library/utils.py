@@ -11,9 +11,11 @@ import os.path
 import pickle
 import zipfile
 
-from config import *
-# from utils import *
-from model import *
+from ml_library.config import *
+# from ml_library.utils import *
+from ml_library.model import *
+from ml_library.w_utils import *
+
 
 ########################################################
 # Helper functions and generators

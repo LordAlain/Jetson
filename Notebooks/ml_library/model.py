@@ -7,9 +7,11 @@ from tensorflow.keras import Input
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import *
 
-from config import *
-from utils import *
-from w_utils import *
+
+from ml_library.config import *
+from ml_library.utils import *
+# from ml_library.model import *
+from ml_library.w_utils import *
 
 
 def random_invert_img(x, p=0.5):
@@ -30,7 +32,7 @@ class RandomInvert(layers.Layer):
 
 
 resize_and_rescale = tf.keras.Sequential([
-    layers.Resizing(IMG_SIZE, IMG_SIZE),
+    tf.keras.layers.layers.Resizing(IMG_SIZE, IMG_SIZE),
     layers.Rescaling(1./255, input_shape=(IMG_SIZE, IMG_SIZE, NUM_CHANNELS))
 ])
 

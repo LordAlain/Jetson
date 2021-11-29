@@ -77,10 +77,10 @@ RUN pip3 install --no-cache-dir --verbose pybind11
 
 
 #
-# TensorFlow 2.X
+# TensorFlow 2.6
 #
-ARG TENSORFLOW_URL= https://developer.download.nvidia.com/compute/redist/jp/v46/tensorflow/tensorflow-2.5.0+nv21.11-cp36-cp36m-linux_aarch64.whl
-ARG TENSORFLOW_WHL=tensorflow-2.5.0+nv21.11-cp36-cp36m-linux_aarch64.whl
+ARG TENSORFLOW_URL= https://developer.download.nvidia.com/compute/redist/jp/v46/tensorflow/tensorflow-2.6.0+nv21.11-cp36-cp36m-linux_aarch64.whl
+ARG TENSORFLOW_WHL=tensorflow-2.6.0+nv21.11-cp36-cp36m-linux_aarch64.whl
 
 RUN wget --quiet --show-progress --progress=bar:force:noscroll --no-check-certificate ${TENSORFLOW_URL} -O ${TENSORFLOW_WHL} && \
 	pip3 install --no-cache-dir --verbose ${TENSORFLOW_WHL} && \
