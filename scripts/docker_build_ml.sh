@@ -71,7 +71,7 @@ if [[ "$CONTAINERS" == "tensorflow" || "$CONTAINERS" == "all" ]]; then
 
 		# TensorFlow 2.6.0 for JetPack 4.6
 		build_tensorflow "https://nvidia.box.com/shared/static/jfbpcioxcb3d3d3wrm1dbtom5aqq5azq.whl" \
-					  "tensorflow-2.5.0+nv21.7-cp36-cp36m-linux_aarch64.whl" \
+					  "tensorflow-2.6.0+nv21.11-cp36-cp36m-linux_aarch64.whl" \
 					  "l4t-tensorflow:r$L4T_VERSION-tf2.6-py3"
 	else
 		# TensorFlow 1.15.5 for JetPack 4.4/4.5
@@ -81,7 +81,7 @@ if [[ "$CONTAINERS" == "tensorflow" || "$CONTAINERS" == "all" ]]; then
 
 		# TensorFlow 2.6.0 for JetPack 4.4/4.5
 		build_tensorflow "https://developer.download.nvidia.com/compute/redist/jp/v45/tensorflow/tensorflow-2.5.0+nv21.6-cp36-cp36m-linux_aarch64.whl" \
-					  "tensorflow-2.5.0+nv21.6-cp36-cp36m-linux_aarch64.whl" \
+					  "tensorflow-2.6.0+nv21.11-cp36-cp36m-linux_aarch64.whl" \
 					  "l4t-tensorflow:r$L4T_VERSION-tf2.6-py3"
 	fi
 fi
