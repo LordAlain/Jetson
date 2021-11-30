@@ -1,20 +1,22 @@
 # Imports
+from ml_library.w_utils import *
+from ml_library.model import *
+from ml_library.config import *
+import zipfile
+import pickle
+import os.path
+import urllib.request
+import math
+from skimage import io, transform
+import cv2 as cv
+from tensorflow.python.ops.gen_math_ops import AccumulateNV2
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
-from tensorflow.python.ops.gen_math_ops import AccumulateNV2
-import cv2 as cv
-from skimage import io, transform
-import math
-import urllib.request
-import os.path
-import pickle
-import zipfile
+import matplotlib as mpl
+# import matplotlib.pyplot as plt
+%matplotlib inline
 
-from ml_library.config import *
 # from ml_library.utils import *
-from ml_library.model import *
-from ml_library.w_utils import *
 
 
 ########################################################
@@ -51,7 +53,7 @@ def generateTensor(archive):
         with archive.open(filename) as img_file:
 
             # img = np.array(Image.open(img_file.read()))
-            # img = plt.imread(img_file.read())
+            # img = mpl.pyplot.plt.imread(img_file.read())
             # img = cv.cvtColor(cv.imread(img_file.read()), cv.COLOR_BGR2RGB)
             img = io.imread(img_file.read())
             img = transform.resize(img,
@@ -170,50 +172,50 @@ def test_attack(model_file):
             # print(label_map[idx[0]], label_map[adv_idx[0]], label_map[labels[0][0]])
             # gradients = sess.run(model.vis, feed_dict={x: images, y: labels, keep_prob: 1})
 
-            # plt.subplot(1, 6, 1)
+            # mpl.pyplot.plt.subplot(1, 6, 1)
             # images = images.astype(np.uint8)
-            # plt.imshow(images.reshape((32, 32, 3)))
-            # plt.title(label_map[idx[0]])
+            # mpl.pyplot.plt.imshow(images.reshape((32, 32, 3)))
+            # mpl.pyplot.plt.title(label_map[idx[0]])
 
-            # plt.subplot(1, 6, 2)
+            # mpl.pyplot.plt.subplot(1, 6, 2)
             # adv_images = adv_images.astype(np.uint8)
-            # plt.imshow(adv_images.reshape((32, 32, 3)))
-            # plt.title(label_map[adv_idx[0]])
+            # mpl.pyplot.plt.imshow(adv_images.reshape((32, 32, 3)))
+            # mpl.pyplot.plt.title(label_map[adv_idx[0]])
 
-            # plt.subplot(1, 6, 3)
+            # mpl.pyplot.plt.subplot(1, 6, 3)
             # blr_images = blr_images.astype(np.uint8)
-            # plt.imshow(blr_images.reshape((32, 32, 3)))
-            # plt.title("Gussian Blur")
+            # mpl.pyplot.plt.imshow(blr_images.reshape((32, 32, 3)))
+            # mpl.pyplot.plt.title("Gussian Blur")
 
-            # plt.subplot(1, 6, 4)
+            # mpl.pyplot.plt.subplot(1, 6, 4)
             # drk_images = drk_images.astype(np.uint8)
-            # plt.imshow(drk_images.reshape((32, 32, 3)))
-            # plt.title("Lighting")
+            # mpl.pyplot.plt.imshow(drk_images.reshape((32, 32, 3)))
+            # mpl.pyplot.plt.title("Lighting")
 
-            # plt.subplot(1, 6, 5)
+            # mpl.pyplot.plt.subplot(1, 6, 5)
             # ocl_images = ocl_images.astype(np.uint8)
-            # plt.imshow(ocl_images.reshape((32, 32, 3)))
-            # plt.title("Occulusion")
+            # mpl.pyplot.plt.imshow(ocl_images.reshape((32, 32, 3)))
+            # mpl.pyplot.plt.title("Occulusion")
 
-            # plt.subplot(1, 6, 6)
+            # mpl.pyplot.plt.subplot(1, 6, 6)
             # gradients = gradients * 1000
             # gradients = np.clip(gradients, 0., 1.)*255
             # gradients = gradients.astype(np.uint8)
-            # plt.imshow(gradients.reshape((32, 32, 3)))
-            # plt.title("Gradients")
-            # plt.show()
+            # mpl.pyplot.plt.imshow(gradients.reshape((32, 32, 3)))
+            # mpl.pyplot.plt.title("Gradients")
+            # mpl.pyplot.plt.show()
 
         # Accuracy /= num
         # print("Overall adversarial acc :", Accuracy)
 
         # # Show Plots
-        # plt.subplot(1,2,1)
-        # plt.imshow(images.reshape((32, 32, 3)))
-        # plt.title(label_map[idx[0]])
-        # plt.subplot(1,2,2)
-        # plt.imshow(images.reshape((32, 32, 3)))
-        # plt.title(label_map[adv_idx[0]])
-        # plt.show()
+        # mpl.pyplot.plt.subplot(1,2,1)
+        # mpl.pyplot.plt.imshow(images.reshape((32, 32, 3)))
+        # mpl.pyplot.plt.title(label_map[idx[0]])
+        # mpl.pyplot.plt.subplot(1,2,2)
+        # mpl.pyplot.plt.imshow(images.reshape((32, 32, 3)))
+        # mpl.pyplot.plt.title(label_map[adv_idx[0]])
+        # mpl.pyplot.plt.show()
         # print(label_map[idx[0]], label_map[adv_idx[0]])
 
 
@@ -385,18 +387,18 @@ def display_random_images(images):
     image = images[np.random.randint(images.shape[0])]
 
     # Show original image for reference
-    plt.subplot(3, 3, 1)
-    plt.imshow(image)
-    plt.title('Original Image')
+    mpl.pyplot.plt.subplot(3, 3, 1)
+    mpl.pyplot.plt.imshow(image)
+    mpl.pyplot.plt.title('Original Image')
 
     for i in range(9):
         image_x = transform_image(image, ANGLE, TRANSLATION, WARP)
-        plt.subplot(3, 3, i+2)
-        plt.imshow(image_x)
-        plt.title('Transformed Image %d' % (i+1,))
+        mpl.pyplot.plt.subplot(3, 3, i+2)
+        mpl.pyplot.plt.imshow(image_x)
+        mpl.pyplot.plt.title('Transformed Image %d' % (i+1,))
 
-    plt.tight_layout()
-    plt.show()
+    mpl.pyplot.plt.tight_layout()
+    mpl.pyplot.plt.show()
 
 
 # def display_random(file):
@@ -411,12 +413,12 @@ def display_random_images(images):
     #     for i in range(9):
     #         rand_idx = np.random.randint(images.shape[0])
     #         image = images[rand_idx]
-    #         plt.subplot(3, 3, i+1)
-    #         plt.imshow(image)
-    #         plt.title('Image Idx: %d' % (rand_idx,))
+    #         mpl.pyplot.plt.subplot(3, 3, i+1)
+    #         mpl.pyplot.plt.imshow(image)
+    #         mpl.pyplot.plt.title('Image Idx: %d' % (rand_idx,))
 
-    #     plt.tight_layout()
-    #     plt.show()
+    #     mpl.pyplot.plt.tight_layout()
+    #     mpl.pyplot.plt.show()
 
 
 def map_labels(label_csv):

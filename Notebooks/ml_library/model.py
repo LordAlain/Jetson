@@ -155,7 +155,7 @@ def get_uncompiled_model(REIN=False):
     model.add(Dropout(RATE))
     model.add(Dense(1024, activation='gelu'))
     model.add(Dropout(RATE))
-    outputs = Dense(NUM_CLASSES, activation="softmax", name="predictions")(x)
+    outputs = Dense(NUM_CLASSES, activation="softmax", name="predictions")
 
     # build model
     model = keras.Model(inputs=inputs, outputs=outputs)
