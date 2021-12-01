@@ -29,7 +29,7 @@ NUM_CLASSES = 43
 ANGLE = 15
 TRANSLATION = 0.2
 WARP = 0.0  # 0.05
-NUM_NEW_IMAGES = 1000
+NUM_NEW_IMAGES = 10
 #NUM_NEW_IMAGES = 100000
 
 # Model parameters
@@ -48,7 +48,7 @@ OPT = tf.optimizers.SGD(learning_rate=LR, momentum=0,
 RESTORE = False  # restore previous model, don't train?
 RESUME = False  # resume training from previously trained model?
 
-NUM_EPOCH = 40
+NUM_EPOCH = 5
 # LEARNING_RATE =
 # coef = 0.00005
 

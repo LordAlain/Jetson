@@ -7,11 +7,10 @@ from tensorflow.keras import Input
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import *
 
-
 from ml_library.config import *
-from ml_library.utils import *
-# from ml_library.model import *
-from ml_library.w_utils import *
+#from ml_library.utils import *
+## from ml_library.model import *
+#from ml_library.w_utils import *
 
 
 def random_invert_img(x, p=0.5):
@@ -32,23 +31,24 @@ class RandomInvert(layers.Layer):
 
 
 resize_and_rescale = tf.keras.Sequential([
-    tf.keras.layers.layers.Resizing(IMG_SIZE, IMG_SIZE),
+    layers.Resizing(IMG_SIZE, IMG_SIZE),
+    # tf.keras.layers.layers.Resizing(IMG_SIZE, IMG_SIZE),
     layers.Rescaling(1./255, input_shape=(IMG_SIZE, IMG_SIZE, NUM_CHANNELS))
 ])
 
 
-data_augmentation = keras.Sequential(
-    [
-        # resize_and_rescale,
-        # RandomInvert,
-        layers.RandomFlip("horizontal",
-                          input_shape=(IMG_SIZE,
-                                       IMG_SIZE,
-                                       NUM_CHANNELS)),
-        layers.RandomRotation(0.1),
-        layers.RandomZoom(0.1),
-    ]
-)
+# data_augmentation = keras.Sequential(
+#     [
+#         # resize_and_rescale,
+#         # RandomInvert,
+#         layers.RandomFlip("horizontal",
+#                           input_shape=(IMG_SIZE,
+#                                        IMG_SIZE,
+#                                        NUM_CHANNELS)),
+#         layers.RandomRotation(0.1),
+#         layers.RandomZoom(0.1),
+#     ]
+# )
 
 
 class Sampling(layers.Layer):
@@ -101,22 +101,25 @@ class VariationalAutoEncoder(tf.keras.Model):
     def __init__(
         self,
         original_dim,
-        intermediate_dim=IMG_SIZE*2,
-        latent_dim=IMG_SIZE,
+        intermediate_dim=64,
+        latent_dim=32,
+        REIN=False,
         name="autoencoder",
         **kwargs
     ):
         super(VariationalAutoEncoder, self).__init__(name=name, **kwargs)
+        print(original_dim)
         self.original_dim = original_dim
-        self.data_aug = data_augmentation()
+        print(self.original_dim)
+        # self.data_aug = data_augmentation()
         self.encoder = Encoder(latent_dim=latent_dim,
                                intermediate_dim=intermediate_dim)
         self.decoder = Decoder(original_dim, intermediate_dim=intermediate_dim)
 
-    def call(self, inputs, REIN=False):
+    def call(self, inputs):
         # REIN Data Augmentation
-        if(REIN):
-            inputs = self.data_aug(inputs)
+        # if(REIN):
+        #     inputs = self.data_aug(inputs)
         z_mean, z_log_var, z = self.encoder(inputs)
         reconstructed = self.decoder(z)
         # Add KL divergence regularization loss.
@@ -128,25 +131,27 @@ class VariationalAutoEncoder(tf.keras.Model):
 
 
 def get_uncompiled_model(REIN=False):
+    # https://keras.io/guides/sequential_model/ - example code to build model
     inputs = keras.Input(
         shape=(IMG_SIZE, IMG_SIZE, NUM_CHANNELS), name="inputs")
-    model = keras.Sequential()
-    model.add(resize_and_rescale)
+    model = keras.Sequential(inputs)
+    # model.add(inputs)
+    # model.add(resize_and_rescale)
 
-    # REIN Data Augmentation
-    if(REIN):
-        model.add(data_augmentation)
+    # # REIN Data Augmentation
+    # if(REIN):
+    #     model.add(data_augmentation)
 
     model.add(Conv2D(16, 3, padding='same', activation='gelu'))
-    model.add(BatchNormalization)
+    # model.add(BatchNormalization)
     model.add(MaxPooling2D())
     model.add(Conv2D(64, 3, strides=(3, 3), padding='same', activation='gelu'))
-    model.add(BatchNormalization)
+    # model.add(BatchNormalization)
     model.add(MaxPooling2D())
     model.add(Conv2D(128, 3, padding='same', activation='gelu'))
-    model.add(BatchNormalization)
+    # model.add(BatchNormalization)
     model.add(Conv2D(128, 3, padding='same', activation='gelu'))
-    model.add(BatchNormalization)
+    # model.add(BatchNormalization)
     model.add(MaxPooling2D())
     model.add(layers.Flatten())
 
@@ -155,11 +160,15 @@ def get_uncompiled_model(REIN=False):
     model.add(Dropout(RATE))
     model.add(Dense(1024, activation='gelu'))
     model.add(Dropout(RATE))
-    outputs = Dense(NUM_CLASSES, activation="softmax", name="predictions")
+    outputs = model(
+        Dense(NUM_CLASSES, activation="softmax", name="predictions"))
+    #model.add(Dense(NUM_CLASSES, activation="softmax", name="predictions"))
 
     # build model
-    model = keras.Model(inputs=inputs, outputs=outputs)
-    return model
+    #outputs = model(inputs)
+    model2 = keras.Model(inputs=inputs, outputs=outputs)
+
+    return model2
 
 
 def get_compiled_model(REIN=False):

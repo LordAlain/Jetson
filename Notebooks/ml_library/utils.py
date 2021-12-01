@@ -1,7 +1,4 @@
 # Imports
-from ml_library.w_utils import *
-from ml_library.model import *
-from ml_library.config import *
 import zipfile
 import pickle
 import os.path
@@ -13,8 +10,13 @@ from tensorflow.python.ops.gen_math_ops import AccumulateNV2
 import tensorflow as tf
 import numpy as np
 import matplotlib as mpl
-# import matplotlib.pyplot as plt
-%matplotlib inline
+import matplotlib.pyplot as plt
+# %matplotlib inline
+import ssl
+
+from ml_library.w_utils import *
+from ml_library.model import *
+from ml_library.config import *
 
 # from ml_library.utils import *
 
@@ -28,20 +30,28 @@ def importDatasets():
     """
     blah
     """
-    if not os.path.exists("./Datasets/GTSRB_Final_Training_Images.zip"):
+    TRAINING_FILE = "./Datasets/GTSRB_Final_Training_Images.zip"
+    TEST_FILE = "./Datasets/GTSRB_Final_Test_Images.zip"
+
+    ssl._create_default_https_context = ssl._create_unverified_context
+    if not os.path.exists(TRAINING_FILE):
         # Get file from URL
         url = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/published-archive.html"
-        filename = "./Datasets/GTSRB_Final_Training_Images.zip"
-        urllib.request.urlretrieve(url, filename)
+        urllib.request.urlretrieve(url, TRAINING_FILE)
+        print("Downloaded Training file: ", os.path.exists(TRAINING_FILE))
+    else:
+        print("Training file: ", os.path.exists(TRAINING_FILE))
 
-    if not os.path.exists("./Datasets/GTSRB_Final_Testing_Images.zip"):
+    if not os.path.exists(TEST_FILE):
         # Get file from URL
         url = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/published-archive.html"
-        filename = "./Datasets/GTSRB_Final_Testing_Images.zip"
-        urllib.request.urlretrieve(url, filename)
+        urllib.request.urlretrieve(url, TEST_FILE)
+        print("Downloaded Test file: ", os.path.exists(TEST_FILE))
+    else:
+        print("Test file: ", os.path.exists(TEST_FILE))
 
 
-def generateTensor(archive):
+def generateTensor(archive, has_class=True):
     """
     blah
     """
@@ -49,23 +59,32 @@ def generateTensor(archive):
     file_paths = [file for file in archive.namelist()
                   if '.ppm' in file]
     tensor = {}
+    tensor['features'] = []
+    tensor['labels'] = []
     for filename in file_paths:
         with archive.open(filename) as img_file:
 
             # img = np.array(Image.open(img_file.read()))
-            # img = mpl.pyplot.plt.imread(img_file.read())
+            # img = plt.imread(img_file.read())
+            img = plt.imread(img_file)
             # img = cv.cvtColor(cv.imread(img_file.read()), cv.COLOR_BGR2RGB)
-            img = io.imread(img_file.read())
+            # img = io.imread(img_file.read())
+
+            # no need to transform here, as it is done by the model
             img = transform.resize(img,
                                    output_shape=(IMG_SIZE, IMG_SIZE),
                                    mode='reflect',
                                    anti_aliasing=True
                                    )
-
-            img_class = int(filename.split('/')[-2])
+            if has_class:
+                img_class = int(filename.split('/')[-2])
+            else:
+                img_class = int(0)
 
         tensor['features'].append(img)
         tensor['labels'].append(img_class)
+        # tensor['features'] = img
+        # tensor['labels'] = img_class
 
     archive.close()
     return tensor
@@ -172,50 +191,50 @@ def test_attack(model_file):
             # print(label_map[idx[0]], label_map[adv_idx[0]], label_map[labels[0][0]])
             # gradients = sess.run(model.vis, feed_dict={x: images, y: labels, keep_prob: 1})
 
-            # mpl.pyplot.plt.subplot(1, 6, 1)
+            # plt.subplot(1, 6, 1)
             # images = images.astype(np.uint8)
-            # mpl.pyplot.plt.imshow(images.reshape((32, 32, 3)))
-            # mpl.pyplot.plt.title(label_map[idx[0]])
+            # plt.imshow(images.reshape((32, 32, 3)))
+            # plt.title(label_map[idx[0]])
 
-            # mpl.pyplot.plt.subplot(1, 6, 2)
+            # plt.subplot(1, 6, 2)
             # adv_images = adv_images.astype(np.uint8)
-            # mpl.pyplot.plt.imshow(adv_images.reshape((32, 32, 3)))
-            # mpl.pyplot.plt.title(label_map[adv_idx[0]])
+            # plt.imshow(adv_images.reshape((32, 32, 3)))
+            # plt.title(label_map[adv_idx[0]])
 
-            # mpl.pyplot.plt.subplot(1, 6, 3)
+            # plt.subplot(1, 6, 3)
             # blr_images = blr_images.astype(np.uint8)
-            # mpl.pyplot.plt.imshow(blr_images.reshape((32, 32, 3)))
-            # mpl.pyplot.plt.title("Gussian Blur")
+            # plt.imshow(blr_images.reshape((32, 32, 3)))
+            # plt.title("Gussian Blur")
 
-            # mpl.pyplot.plt.subplot(1, 6, 4)
+            # plt.subplot(1, 6, 4)
             # drk_images = drk_images.astype(np.uint8)
-            # mpl.pyplot.plt.imshow(drk_images.reshape((32, 32, 3)))
-            # mpl.pyplot.plt.title("Lighting")
+            # plt.imshow(drk_images.reshape((32, 32, 3)))
+            # plt.title("Lighting")
 
-            # mpl.pyplot.plt.subplot(1, 6, 5)
+            # plt.subplot(1, 6, 5)
             # ocl_images = ocl_images.astype(np.uint8)
-            # mpl.pyplot.plt.imshow(ocl_images.reshape((32, 32, 3)))
-            # mpl.pyplot.plt.title("Occulusion")
+            # plt.imshow(ocl_images.reshape((32, 32, 3)))
+            # plt.title("Occulusion")
 
-            # mpl.pyplot.plt.subplot(1, 6, 6)
+            # plt.subplot(1, 6, 6)
             # gradients = gradients * 1000
             # gradients = np.clip(gradients, 0., 1.)*255
             # gradients = gradients.astype(np.uint8)
-            # mpl.pyplot.plt.imshow(gradients.reshape((32, 32, 3)))
-            # mpl.pyplot.plt.title("Gradients")
-            # mpl.pyplot.plt.show()
+            # plt.imshow(gradients.reshape((32, 32, 3)))
+            # plt.title("Gradients")
+            # plt.show()
 
         # Accuracy /= num
         # print("Overall adversarial acc :", Accuracy)
 
         # # Show Plots
-        # mpl.pyplot.plt.subplot(1,2,1)
-        # mpl.pyplot.plt.imshow(images.reshape((32, 32, 3)))
-        # mpl.pyplot.plt.title(label_map[idx[0]])
-        # mpl.pyplot.plt.subplot(1,2,2)
-        # mpl.pyplot.plt.imshow(images.reshape((32, 32, 3)))
-        # mpl.pyplot.plt.title(label_map[adv_idx[0]])
-        # mpl.pyplot.plt.show()
+        # plt.subplot(1,2,1)
+        # plt.imshow(images.reshape((32, 32, 3)))
+        # plt.title(label_map[idx[0]])
+        # plt.subplot(1,2,2)
+        # plt.imshow(images.reshape((32, 32, 3)))
+        # plt.title(label_map[adv_idx[0]])
+        # plt.show()
         # print(label_map[idx[0]], label_map[adv_idx[0]])
 
 
@@ -387,18 +406,18 @@ def display_random_images(images):
     image = images[np.random.randint(images.shape[0])]
 
     # Show original image for reference
-    mpl.pyplot.plt.subplot(3, 3, 1)
-    mpl.pyplot.plt.imshow(image)
-    mpl.pyplot.plt.title('Original Image')
+    plt.subplot(3, 3, 1)
+    plt.imshow(image)
+    plt.title('Original Image')
 
     for i in range(9):
         image_x = transform_image(image, ANGLE, TRANSLATION, WARP)
-        mpl.pyplot.plt.subplot(3, 3, i+2)
-        mpl.pyplot.plt.imshow(image_x)
-        mpl.pyplot.plt.title('Transformed Image %d' % (i+1,))
+        plt.subplot(3, 3, i+2)
+        plt.imshow(image_x)
+        plt.title('Transformed Image %d' % (i+1,))
 
-    mpl.pyplot.plt.tight_layout()
-    mpl.pyplot.plt.show()
+    plt.tight_layout()
+    plt.show()
 
 
 # def display_random(file):
@@ -413,12 +432,12 @@ def display_random_images(images):
     #     for i in range(9):
     #         rand_idx = np.random.randint(images.shape[0])
     #         image = images[rand_idx]
-    #         mpl.pyplot.plt.subplot(3, 3, i+1)
-    #         mpl.pyplot.plt.imshow(image)
-    #         mpl.pyplot.plt.title('Image Idx: %d' % (rand_idx,))
+    #         plt.subplot(3, 3, i+1)
+    #         plt.imshow(image)
+    #         plt.title('Image Idx: %d' % (rand_idx,))
 
-    #     mpl.pyplot.plt.tight_layout()
-    #     mpl.pyplot.plt.show()
+    #     plt.tight_layout()
+    #     plt.show()
 
 
 def map_labels(label_csv):
