@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 # %matplotlib inline
-import ssl
+# import ssl
 
 from ml_library.w_utils import *
 from ml_library.model import *
@@ -33,7 +33,7 @@ def importDatasets():
     TRAINING_FILE = "./Datasets/GTSRB_Final_Training_Images.zip"
     TEST_FILE = "./Datasets/GTSRB_Final_Test_Images.zip"
 
-    ssl._create_default_https_context = ssl._create_unverified_context
+    # ssl._create_default_https_context = ssl._create_unverified_context
     if not os.path.exists(TRAINING_FILE):
         # Get file from URL
         url = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/published-archive.html"
